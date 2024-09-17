@@ -1,7 +1,7 @@
 /*///////////////////////////////////////////////////////////
 *
 * FILE:		client.c
-* AUTHOR:	Your Name Here
+* AUTHOR:	CJ Alexander
 * PROJECT:	CNT 4007 Project 1 - Professor Traynor
 * DESCRIPTION:	Network Client Code
 *
@@ -22,6 +22,11 @@
 #define SNDBUFSIZE 512		    /* The send buffer size */
 #define MDLEN 32
 
+void fatal_error(const char *message) {
+    perror(message);
+    exit(1);
+}
+
 /* The main function */
 int main(int argc, char *argv[])
 {
@@ -30,6 +35,8 @@ int main(int argc, char *argv[])
     struct sockaddr_in serv_addr;   /* The server address */
 
     char *studentName;		    /* Your Name */
+    char *servIP = "127.0.0.1";
+    unsigned short servPort = 12345;
 
     char sndBuf[SNDBUFSIZE];	    /* Send Buffer */
     char rcvBuf[RCVBUFSIZE];	    /* Receive Buffer */
@@ -47,28 +54,37 @@ int main(int argc, char *argv[])
     memset(&rcvBuf, 0, RCVBUFSIZE);
 
     /* Create a new TCP socket*/
-    /*	    FILL IN	*/
-
+    clientSock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
     /* Construct the server address structure */
-    /*	    FILL IN	 */
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_addr.s_addr = inet_addr(servIP);
+    serv_addr.sin_port = htons(servPort); // host to network short - make sure in big endian
 
 
     /* Establish connecction to the server */
-    /*	    FILL IN	 */
+    if (connect(clientSock, (struct sockaddr*) &serv_addr, sizeof(serv_addr)) < 0) {
+        fatal_error("client connect failed");
+    }
 
     
     /* Send the string to the server */
-    /*	    FILL IN	 */
+    int messageLength = strlen(studentName);
+    if (send(clientSock, studentName, messageLength, 0) != messageLength) {
+        fatal_error("client sent an unexpected number of bytes");
+    } 
 
 
     /* Receive and print response from the server */
-    /*	    FILL IN	 */
+    if (recv(clientSock, rcvBuf, MDLEN, 0) < 0) {
+        fatal_error("client receive failed");
+    }
 
     printf("%s\n", studentName);
     printf("Transformed input is: ");
     for(i = 0; i < MDLEN; i++) printf("%02x", rcvBuf[i]);
     printf("\n");
 
+    close(clientSock);
     return 0;
 }

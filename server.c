@@ -1,7 +1,7 @@
 /*///////////////////////////////////////////////////////////
 *
 * FILE:		server.c
-* AUTHOR:	Your Name Here
+* AUTHOR:	CJ Alexander
 * PROJECT:	CNT 4007 Project 1 - Professor Traynor
 * DESCRIPTION:	Network Server Code
 *
@@ -20,6 +20,12 @@
 #define RCVBUFSIZE 512		/* The receive buffer size */
 #define SNDBUFSIZE 512		/* The send buffer size */
 #define BUFSIZE 40		/* Your name can be as many as 40 chars*/
+#define MAXPENDING 10 // no more then 10 incoming connections at a time
+
+void fatal_error(const char *message) {
+    perror(message);
+    exit(1);
+}
 
 /* The main function */
 int main(int argc, char *argv[])
@@ -29,7 +35,7 @@ int main(int argc, char *argv[])
     int clientSock;				/* Client Socket */
     struct sockaddr_in changeServAddr;		/* Local address */
     struct sockaddr_in changeClntAddr;		/* Client address */
-    unsigned short changeServPort;		/* Server port */
+    unsigned short changeServPort = 12345;		/* Server port */
     unsigned int clntLen;			/* Length of address data struct */
 
     char nameBuf[BUFSIZE];			/* Buff to store name from client */
@@ -40,42 +46,57 @@ int main(int argc, char *argv[])
 
 
     /* Create new TCP Socket for incoming requests*/
-    /*	    FILL IN	*/
+    serverSock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
     /* Construct local address structure*/
-    /*	    FILL IN	*/
+    changeServAddr.sin_family = AF_INET;
+    changeServAddr.sin_addr.s_addr = htonl(INADDR_ANY); // any incoming interfaces
+    changeServAddr.sin_port = htons(changeServPort);
     
     /* Bind to local address structure */
-    /*	    FILL IN	*/
-
-    /* Listen for incoming connections */
-    /*	    FILL IN	*/
-
-    /* Loop server forever*/
-    while(1)
-    {
-
-	/* Accept incoming connection */
-	/*	FILL IN	    */
-
-	/* Extract Your Name from the packet, store in nameBuf */
-	/*	FILL IN	    */
-
-
-	/* Run this and return the final value in md_value to client */
-	/* Takes the client name and changes it */
-	/* Students should NOT touch this code */
-	  OpenSSL_add_all_digests();
-	  md = EVP_get_digestbyname("SHA256");
-	  mdctx = EVP_MD_CTX_create();
-	  EVP_DigestInit_ex(mdctx, md, NULL);
-	  EVP_DigestUpdate(mdctx, nameBuf, strlen(nameBuf));
-	  EVP_DigestFinal_ex(mdctx, md_value, &md_len);
-	  EVP_MD_CTX_destroy(mdctx);
-
-	/* Return md_value to client */
-	/*	FILL IN	    */
-
+    if (bind(serverSock, (struct sockaddr *) &changeServAddr, sizeof(changeServAddr)) < 0) {
+      fatal_error("server bind failed");
     }
 
+    /* Listen for incoming connections */
+    if (listen(serverSock, MAXPENDING) < 0) {
+      fatal_error("server listen failed");
+    }
+
+    /* Loop server forever*/
+    while(1) {
+
+      /* Accept incoming connection */
+      clntLen = sizeof(changeClntAddr);
+      clientSock = accept(serverSock, (struct sockaddr *) &changeClntAddr, &clntLen);
+      if (clientSock < 0) {
+        fatal_error("server accept failed");
+      }
+
+      /* Extract Your Name from the packet, store in nameBuf */
+      if (recv(clientSock, nameBuf, BUFSIZE, 0) < 0) {
+        fatal_error("server receive failed");
+      }
+
+
+      /* Run this and return the final value in md_value to client */
+      /* Takes the client name and changes it */
+      /* Students should NOT touch this code */
+        OpenSSL_add_all_digests();
+        md = EVP_get_digestbyname("SHA256");
+        mdctx = EVP_MD_CTX_create();
+        EVP_DigestInit_ex(mdctx, md, NULL);
+        EVP_DigestUpdate(mdctx, nameBuf, strlen(nameBuf));
+        EVP_DigestFinal_ex(mdctx, md_value, &md_len);
+        EVP_MD_CTX_destroy(mdctx);
+
+      /* Return md_value to client */
+        if (send(clientSock, md_value, md_len, 0) != md_len) {
+          fatal_error("server send failed");
+        }
+
+        close(clientSock);
+    }
+
+  close(serverSock);
 }
