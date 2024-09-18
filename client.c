@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 
     char *studentName;		    /* Your Name */
     char *servIP = "127.0.0.1";
-    unsigned short servPort = 12345;
+    unsigned short servPort = 9090;
 
     char sndBuf[SNDBUFSIZE];	    /* Send Buffer */
     char rcvBuf[RCVBUFSIZE];	    /* Receive Buffer */

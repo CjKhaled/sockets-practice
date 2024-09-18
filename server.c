@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
     int clientSock;				/* Client Socket */
     struct sockaddr_in changeServAddr;		/* Local address */
     struct sockaddr_in changeClntAddr;		/* Client address */
-    unsigned short changeServPort = 12345;		/* Server port */
+    unsigned short changeServPort = 9090;		/* Server port */
     unsigned int clntLen;			/* Length of address data struct */
 
     char nameBuf[BUFSIZE];			/* Buff to store name from client */
